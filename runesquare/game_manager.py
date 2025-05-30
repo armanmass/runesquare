@@ -1,6 +1,7 @@
 import pygame
-from runesquare.settings import WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE, BACKGROUND_COLOR
+from runesquare.settings import WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE, BACKGROUND_COLOR, WATER_COLOR, ISLAND_COLOR, ISLAND_ELLIPSE, WORLD_WIDTH, WORLD_HEIGHT
 from runesquare.entities.player import Player
+from typing import Tuple
 
 class GameManager:
     def __init__(self) -> None:
@@ -10,10 +11,11 @@ class GameManager:
         self.clock = pygame.time.Clock()
         self.running = True
         self.player = Player(
-            position=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2),
+            position=(WORLD_WIDTH // 2, WORLD_HEIGHT // 2),
             color=(255, 255, 0),  # Yellow
             size=32
         )
+        self.camera_offset = (0, 0)
 
     def run(self) -> None:
         while self.running:
@@ -30,10 +32,26 @@ class GameManager:
     def _update(self) -> None:
         keys = pygame.key.get_pressed()
         self.player.handle_input(keys)
+        self.camera_offset = self._calculate_camera_offset()
+
+    def _calculate_camera_offset(self) -> Tuple[int, int]:
+        px, py, pw, ph = self.player.get_rect()
+        # Center camera on player
+        cam_x = px + pw // 2 - WINDOW_WIDTH // 2
+        cam_y = py + ph // 2 - WINDOW_HEIGHT // 2
+        # Clamp to world bounds
+        cam_x = max(0, min(cam_x, WORLD_WIDTH - WINDOW_WIDTH))
+        cam_y = max(0, min(cam_y, WORLD_HEIGHT - WINDOW_HEIGHT))
+        return (cam_x, cam_y)
 
     def _render(self) -> None:
-        self.screen.fill(BACKGROUND_COLOR)
-        self.player.draw(self.screen)
+        self.screen.fill(WATER_COLOR)
+        # Draw island ellipse (offset by camera)
+        ex, ey, ew, eh = ISLAND_ELLIPSE
+        ellipse_rect = (ex - self.camera_offset[0], ey - self.camera_offset[1], ew, eh)
+        pygame.draw.ellipse(self.screen, ISLAND_COLOR, ellipse_rect)
+        # Draw player
+        self.player.draw(self.screen, self.camera_offset)
         pygame.display.flip()
 
     def quit(self) -> None:

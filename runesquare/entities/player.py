@@ -1,9 +1,21 @@
 import pygame
 from typing import Tuple
+from runesquare.settings import ISLAND_ELLIPSE
+
+def is_inside_ellipse(rect: Tuple[int, int, int, int], ellipse: Tuple[int, int, int, int]) -> bool:
+    rx, ry, rw, rh = rect
+    ex, ey, ew, eh = ellipse
+    px = rx + rw / 2
+    py = ry + rh / 2
+    cx = ex + ew / 2
+    cy = ey + eh / 2
+    nx = (px - cx) / (ew / 2)
+    ny = (py - cy) / (eh / 2)
+    return nx * nx + ny * ny <= 1
 
 class Player:
     def __init__(self, position: Tuple[int, int], color: Tuple[int, int, int], size: int) -> None:
-        self.position = list(position)  # [x, y]
+        self.position = list(position)  # [x, y] in world coordinates
         self.color = color
         self.size = size
         self.speed = 4
@@ -18,12 +30,24 @@ class Player:
             dx -= self.speed
         if keys[pygame.K_d]:
             dx += self.speed
-        self.position[0] += dx
-        self.position[1] += dy
+        new_rect = (
+            self.position[0] + dx,
+            self.position[1] + dy,
+            self.size,
+            self.size
+        )
+        if is_inside_ellipse(new_rect, ISLAND_ELLIPSE):
+            self.position[0] += dx
+            self.position[1] += dy
 
-    def draw(self, surface: pygame.Surface) -> None:
+    def get_rect(self) -> Tuple[int, int, int, int]:
+        return (self.position[0], self.position[1], self.size, self.size)
+
+    def draw(self, surface: pygame.Surface, camera_offset: Tuple[int, int]) -> None:
+        screen_x = self.position[0] - camera_offset[0]
+        screen_y = self.position[1] - camera_offset[1]
         pygame.draw.rect(
             surface,
             self.color,
-            (self.position[0], self.position[1], self.size, self.size)
+            (screen_x, screen_y, self.size, self.size)
         )
