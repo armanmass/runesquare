@@ -1,6 +1,7 @@
 import pygame
 from runesquare.settings import WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE, BACKGROUND_COLOR, WATER_COLOR, ISLAND_COLOR, ISLAND_ELLIPSE, WORLD_WIDTH, WORLD_HEIGHT
 from runesquare.entities.player import Player
+from runesquare.systems.renderer import load_tiles, draw_island
 from typing import Tuple
 
 class GameManager:
@@ -16,6 +17,7 @@ class GameManager:
             size=32
         )
         self.camera_offset = (0, 0)
+        self.tiles = load_tiles()
 
     def run(self) -> None:
         while self.running:
@@ -46,11 +48,7 @@ class GameManager:
 
     def _render(self) -> None:
         self.screen.fill(WATER_COLOR)
-        # Draw island ellipse (offset by camera)
-        ex, ey, ew, eh = ISLAND_ELLIPSE
-        ellipse_rect = (ex - self.camera_offset[0], ey - self.camera_offset[1], ew, eh)
-        pygame.draw.ellipse(self.screen, ISLAND_COLOR, ellipse_rect)
-        # Draw player
+        draw_island(self.screen, self.camera_offset, self.tiles)
         self.player.draw(self.screen, self.camera_offset)
         pygame.display.flip()
 
