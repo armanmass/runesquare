@@ -6,6 +6,7 @@ from runesquare.entities.tree import Tree
 from runesquare.systems.renderer import load_tiles, draw_island
 from runesquare.entities.player import is_inside_ellipse
 from typing import Tuple
+from runesquare.systems.interaction import find_nearby_tree
 
 class GameManager:
     def __init__(self) -> None:
@@ -22,6 +23,7 @@ class GameManager:
         self.camera_offset = (0, 0)
         self.tiles = load_tiles()
         self.trees = self._generate_trees(num_trees=12, tree_size=64)
+        self.action = None  # e.g., {"type": "cutting", "tree_idx": int, "progress": float}
 
     def _generate_trees(self, num_trees: int, tree_size: int) -> list:
         trees = []
@@ -48,12 +50,25 @@ class GameManager:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                if self.action is None:
+                    tree_rects = [tree.get_rect() for tree in self.trees]
+                    player_rect = self.player.get_rect()
+                    idx = find_nearby_tree(player_rect, tree_rects)
+                    if idx is not None:
+                        self.action = {"type": "cutting", "tree_idx": idx, "progress": 0.0}
 
     def _update(self) -> None:
         keys = pygame.key.get_pressed()
         tree_rects = [tree.get_rect() for tree in self.trees]
         self.player.handle_input(keys, tree_rects)
         self.camera_offset = self._calculate_camera_offset()
+        # Update action progress if cutting
+        if self.action is not None and self.action["type"] == "cutting":
+            self.action["progress"] += 1 / 60  # 1 second to cut (assuming 60 FPS)
+            if self.action["progress"] >= 1.0:
+                # Cutting complete (for now, just reset action)
+                self.action = None
 
     def _calculate_camera_offset(self) -> Tuple[int, int]:
         px, py, pw, ph = self.player.get_rect()
@@ -71,6 +86,21 @@ class GameManager:
         for tree in self.trees:
             tree.draw(self.screen, self.camera_offset)
         self.player.draw(self.screen, self.camera_offset)
+        # Draw progress bar if cutting
+        if self.action is not None and self.action["type"] == "cutting":
+            px, py, pw, ph = self.player.get_rect()
+            bar_width = 48
+            bar_height = 8
+            progress = min(self.action["progress"], 1.0)
+            filled = int(bar_width * progress)
+            screen_x = px - self.camera_offset[0] + (pw - bar_width) // 2
+            screen_y = py - self.camera_offset[1] - 16
+            # Draw background
+            pygame.draw.rect(self.screen, (60, 60, 60), (screen_x, screen_y, bar_width, bar_height))
+            # Draw filled portion
+            pygame.draw.rect(self.screen, (50, 205, 50), (screen_x, screen_y, filled, bar_height))
+            # Draw border
+            pygame.draw.rect(self.screen, (0, 0, 0), (screen_x, screen_y, bar_width, bar_height), 2)
         pygame.display.flip()
 
     def quit(self) -> None:
