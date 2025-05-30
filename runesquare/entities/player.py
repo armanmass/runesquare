@@ -1,5 +1,5 @@
 import pygame
-from typing import Tuple
+from typing import Tuple, List
 from runesquare.settings import ISLAND_ELLIPSE
 
 def is_inside_ellipse(rect: Tuple[int, int, int, int], ellipse: Tuple[int, int, int, int]) -> bool:
@@ -13,6 +13,13 @@ def is_inside_ellipse(rect: Tuple[int, int, int, int], ellipse: Tuple[int, int, 
     ny = (py - cy) / (eh / 2)
     return nx * nx + ny * ny <= 1
 
+def collides_with_any(rect: Tuple[int, int, int, int], obstacles: List[Tuple[int, int, int, int]]) -> bool:
+    rx, ry, rw, rh = rect
+    for ox, oy, ow, oh in obstacles:
+        if rx < ox + ow and rx + rw > ox and ry < oy + oh and ry + rh > oy:
+            return True
+    return False
+
 class Player:
     def __init__(self, position: Tuple[int, int], color: Tuple[int, int, int], size: int) -> None:
         self.position = list(position)  # [x, y] in world coordinates
@@ -20,7 +27,7 @@ class Player:
         self.size = size
         self.speed = 4
 
-    def handle_input(self, keys: pygame.key.ScancodeWrapper) -> None:
+    def handle_input(self, keys: pygame.key.ScancodeWrapper, tree_rects: List[Tuple[int, int, int, int]]) -> None:
         dx, dy = 0, 0
         if keys[pygame.K_w]:
             dy -= self.speed
@@ -36,7 +43,7 @@ class Player:
             self.size,
             self.size
         )
-        if is_inside_ellipse(new_rect, ISLAND_ELLIPSE):
+        if is_inside_ellipse(new_rect, ISLAND_ELLIPSE) and not collides_with_any(new_rect, tree_rects):
             self.position[0] += dx
             self.position[1] += dy
 

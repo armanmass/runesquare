@@ -1,7 +1,10 @@
 import pygame
+import random
 from runesquare.settings import WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE, BACKGROUND_COLOR, WATER_COLOR, ISLAND_COLOR, ISLAND_ELLIPSE, WORLD_WIDTH, WORLD_HEIGHT
 from runesquare.entities.player import Player
+from runesquare.entities.tree import Tree
 from runesquare.systems.renderer import load_tiles, draw_island
+from runesquare.entities.player import is_inside_ellipse
 from typing import Tuple
 
 class GameManager:
@@ -18,6 +21,21 @@ class GameManager:
         )
         self.camera_offset = (0, 0)
         self.tiles = load_tiles()
+        self.trees = self._generate_trees(num_trees=12, tree_size=64)
+
+    def _generate_trees(self, num_trees: int, tree_size: int) -> list:
+        trees = []
+        attempts = 0
+        while len(trees) < num_trees and attempts < num_trees * 10:
+            x = random.randint(0, WORLD_WIDTH - tree_size)
+            y = random.randint(0, WORLD_HEIGHT - tree_size)
+            tree_rect = (x, y, tree_size, tree_size)
+            if is_inside_ellipse(tree_rect, ISLAND_ELLIPSE):
+                px, py = WORLD_WIDTH // 2, WORLD_HEIGHT // 2
+                if abs(x - px) > tree_size and abs(y - py) > tree_size:
+                    trees.append(Tree((x, y), size=tree_size))
+            attempts += 1
+        return trees
 
     def run(self) -> None:
         while self.running:
@@ -33,7 +51,8 @@ class GameManager:
 
     def _update(self) -> None:
         keys = pygame.key.get_pressed()
-        self.player.handle_input(keys)
+        tree_rects = [tree.get_rect() for tree in self.trees]
+        self.player.handle_input(keys, tree_rects)
         self.camera_offset = self._calculate_camera_offset()
 
     def _calculate_camera_offset(self) -> Tuple[int, int]:
@@ -49,6 +68,8 @@ class GameManager:
     def _render(self) -> None:
         self.screen.fill(WATER_COLOR)
         draw_island(self.screen, self.camera_offset, self.tiles)
+        for tree in self.trees:
+            tree.draw(self.screen, self.camera_offset)
         self.player.draw(self.screen, self.camera_offset)
         pygame.display.flip()
 
