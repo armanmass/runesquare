@@ -23,7 +23,7 @@ class GameManager:
         self.camera_offset = (0, 0)
         self.tiles = load_tiles()
         self.trees = self._generate_trees(num_trees=12, tree_size=64)
-        self.action = None  # e.g., {"type": "cutting", "tree_idx": int, "progress": float}
+        self.action = None  # e.g., {"type": "cutting", "target_idx": int, "progress": float}
 
     def _generate_trees(self, num_trees: int, tree_size: int) -> list:
         trees = []
@@ -55,19 +55,42 @@ class GameManager:
                     tree_rects = [tree.get_rect() for tree in self.trees]
                     player_rect = self.player.get_rect()
                     idx = find_nearby_tree(player_rect, tree_rects)
-                    if idx is not None:
-                        self.action = {"type": "cutting", "tree_idx": idx, "progress": 0.0}
+                    if idx is not None and not self.trees[idx].is_dead():
+                        self.action = {
+                            "type": "cutting",
+                            "target_idx": idx,
+                            "progress": 0.0,
+                            "target_life": self.trees[idx].life,
+                        }
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                self.action = None  # Allow canceling action
 
     def _update(self) -> None:
         keys = pygame.key.get_pressed()
         tree_rects = [tree.get_rect() for tree in self.trees]
         self.player.handle_input(keys, tree_rects)
         self.camera_offset = self._calculate_camera_offset()
-        # Update action progress if cutting
+        # Continuous action system
         if self.action is not None and self.action["type"] == "cutting":
-            self.action["progress"] += 1 / 60  # 1 second to cut (assuming 60 FPS)
-            if self.action["progress"] >= 1.0:
-                # Cutting complete (for now, just reset action)
+            idx = self.action["target_idx"]
+            if 0 <= idx < len(self.trees):
+                tree = self.trees[idx]
+                player_rect = self.player.get_rect()
+                # Check proximity and if tree is alive
+                if not tree.is_dead() and find_nearby_tree(player_rect, [tree.get_rect()]) == 0:
+                    self.action["progress"] += 1 / 60  # 1 second per chop
+                    if self.action["progress"] >= 1.0:
+                        tree.take_damage(1)
+                        self.action["progress"] = 0.0
+                        self.action["target_life"] = tree.life
+                        if tree.is_dead():
+                            # Remove dead tree and spawn a new one
+                            self.trees.pop(idx)
+                            self.trees.append(self._spawn_tree(tree_size=64))
+                            self.action = None
+                else:
+                    self.action = None  # Cancel if out of range or tree dead
+            else:
                 self.action = None
 
     def _calculate_camera_offset(self) -> Tuple[int, int]:
@@ -102,6 +125,26 @@ class GameManager:
             # Draw border
             pygame.draw.rect(self.screen, (0, 0, 0), (screen_x, screen_y, bar_width, bar_height), 2)
         pygame.display.flip()
+
+    def _spawn_tree(self, tree_size: int) -> Tree:
+        attempts = 0
+        while attempts < 100:
+            x = random.randint(0, WORLD_WIDTH - tree_size)
+            y = random.randint(0, WORLD_HEIGHT - tree_size)
+            tree_rect = (x, y, tree_size, tree_size)
+            if is_inside_ellipse(tree_rect, ISLAND_ELLIPSE):
+                px, py = WORLD_WIDTH // 2, WORLD_HEIGHT // 2
+                if abs(x - px) > tree_size and abs(y - py) > tree_size:
+                    # Avoid overlapping other trees
+                    for t in self.trees:
+                        tx, ty, tw, th = t.get_rect()
+                        if (x < tx + tw and x + tree_size > tx and y < ty + th and y + tree_size > ty):
+                            break
+                    else:
+                        return Tree((x, y), size=tree_size)
+            attempts += 1
+        # Fallback: just return a tree at center
+        return Tree((WORLD_WIDTH // 2, WORLD_HEIGHT // 2), size=tree_size)
 
     def quit(self) -> None:
         pygame.quit()
