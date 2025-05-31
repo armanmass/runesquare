@@ -28,6 +28,7 @@ class GameManager:
     def _generate_trees(self, num_trees: int, tree_size: int) -> list:
         trees = []
         attempts = 0
+        tree_sprite = self.tiles["tree"] # Get the tree sprite
         while len(trees) < num_trees and attempts < num_trees * 10:
             x = random.randint(0, WORLD_WIDTH - tree_size)
             y = random.randint(0, WORLD_HEIGHT - tree_size)
@@ -35,7 +36,7 @@ class GameManager:
             if is_inside_ellipse(tree_rect, ISLAND_ELLIPSE):
                 px, py = WORLD_WIDTH // 2, WORLD_HEIGHT // 2
                 if abs(x - px) > tree_size and abs(y - py) > tree_size:
-                    trees.append(Tree((x, y), size=tree_size))
+                    trees.append(Tree((x, y), sprite=tree_sprite, size=tree_size)) # Pass the sprite
             attempts += 1
         return trees
 
@@ -128,6 +129,7 @@ class GameManager:
 
     def _spawn_tree(self, tree_size: int) -> Tree:
         attempts = 0
+        tree_sprite = self.tiles["tree"] # Get the tree sprite
         while attempts < 100:
             x = random.randint(0, WORLD_WIDTH - tree_size)
             y = random.randint(0, WORLD_HEIGHT - tree_size)
@@ -141,10 +143,10 @@ class GameManager:
                         if (x < tx + tw and x + tree_size > tx and y < ty + th and y + tree_size > ty):
                             break
                     else:
-                        return Tree((x, y), size=tree_size)
+                        return Tree((x, y), sprite=tree_sprite, size=tree_size) # Pass the sprite
             attempts += 1
         # Fallback: just return a tree at center
-        return Tree((WORLD_WIDTH // 2, WORLD_HEIGHT // 2), size=tree_size)
+        return Tree((WORLD_WIDTH // 2, WORLD_HEIGHT // 2), sprite=tree_sprite, size=tree_size) # Pass the sprite
 
     def quit(self) -> None:
         pygame.quit()
