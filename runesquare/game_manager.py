@@ -1,19 +1,22 @@
+import os
 import pygame
 import random
+from typing import Tuple
+
 from runesquare.settings import WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE, BACKGROUND_COLOR, WATER_COLOR, ISLAND_COLOR, ISLAND_ELLIPSE, WORLD_WIDTH, WORLD_HEIGHT
 from runesquare.entities.player import Player
 from runesquare.entities.tree import Tree
 from runesquare.systems.renderer import load_tiles, draw_island
 from runesquare.entities.player import is_inside_ellipse
-from typing import Tuple
 from runesquare.systems.interaction import find_nearby_tree
+from runesquare.data.save_load import save_skills, load_skills
 
 class GameManager:
     def __init__(self) -> None:
         pygame.init()
         self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         pygame.display.set_caption(WINDOW_TITLE)
-        self.clock = pygame.time.Clock()
+        self.clock = self._init_clock()
         self.running = True
         self.player = Player(
             position=(WORLD_WIDTH // 2, WORLD_HEIGHT // 2),
@@ -24,6 +27,14 @@ class GameManager:
         self.tiles = load_tiles()
         self.trees = self._generate_trees(num_trees=12, tree_size=64)
         self.action = None  # e.g., {"type": "cutting", "target_idx": int, "progress": float}
+        # Load skills if save exists
+        save_path = os.path.join(os.path.dirname(__file__), "player_skills.json")
+        skills_data = load_skills(save_path)
+        self.player.skill_manager.from_dict(skills_data)
+        self._save_path = save_path
+
+    def _init_clock(self):
+        return pygame.time.Clock()
 
     def _generate_trees(self, num_trees: int, tree_size: int) -> list:
         trees = []
@@ -156,4 +167,6 @@ class GameManager:
         return Tree((WORLD_WIDTH // 2, WORLD_HEIGHT // 2), sprite=tree_sprite, size=tree_size) # Pass the sprite
 
     def quit(self) -> None:
+        # Save skills on quit
+        save_skills(self.player.skill_manager.to_dict(), self._save_path)
         pygame.quit()

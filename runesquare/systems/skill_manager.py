@@ -54,3 +54,15 @@ class SkillManager:
     def get_all_skills(self) -> Dict[str, Skill]:
         """Returns a dictionary of all skills."""
         return self.skills
+
+    def to_dict(self) -> dict:
+        """Serialize all skills to a dict of {skill_name: current_xp}."""
+        return {name: skill.current_xp for name, skill in self.skills.items()}
+
+    def from_dict(self, data: dict) -> None:
+        """Restore skills from a dict of {skill_name: current_xp}."""
+        for name, xp in data.items():
+            if name in self.skills:
+                self.skills[name].current_xp = xp
+            else:
+                self.skills[name] = Skill(name, xp)
