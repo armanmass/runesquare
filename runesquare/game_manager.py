@@ -10,6 +10,7 @@ from runesquare.systems.renderer import load_tiles, draw_island
 from runesquare.entities.player import is_inside_ellipse
 from runesquare.systems.interaction import find_nearby_tree
 from runesquare.data.save_load import save_skills, load_skills
+from runesquare.ui.skill_panel import SkillPanel
 
 class GameManager:
     def __init__(self) -> None:
@@ -32,6 +33,9 @@ class GameManager:
         skills_data = load_skills(save_path)
         self.player.skill_manager.from_dict(skills_data)
         self._save_path = save_path
+        # Initialize font and skill panel
+        self._font = pygame.font.SysFont("consolas", 20)
+        self._skill_panel = SkillPanel(self._font, position=(10, 10))
 
     def _init_clock(self):
         return pygame.time.Clock()
@@ -128,6 +132,8 @@ class GameManager:
         for tree in self.trees:
             tree.draw(self.screen, self.camera_offset)
         self.player.draw(self.screen, self.camera_offset)
+        # Draw skill panel
+        self._skill_panel.draw(self.screen, self.player.skill_manager)
         # Draw progress bar if cutting
         if self.action is not None and self.action["type"] == "cutting":
             px, py, pw, ph = self.player.get_rect()

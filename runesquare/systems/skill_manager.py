@@ -66,3 +66,11 @@ class SkillManager:
                 self.skills[name].current_xp = xp
             else:
                 self.skills[name] = Skill(name, xp)
+
+    def total_experience(self) -> int:
+        """Return the sum of all experience points across all skills."""
+        return sum(skill.current_xp for skill in self.skills.values())
+
+    def total_level(self) -> int:
+        """Return the sum of all skill levels across all skills."""
+        return sum(skill.level for skill in self.skills.values())
