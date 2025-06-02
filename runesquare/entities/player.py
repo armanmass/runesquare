@@ -1,6 +1,7 @@
 import pygame
 from typing import Tuple, List
 from runesquare.settings import ISLAND_ELLIPSE
+from runesquare.systems.skill_manager import SkillManager
 
 def is_inside_ellipse(rect: Tuple[int, int, int, int], ellipse: Tuple[int, int, int, int]) -> bool:
     rx, ry, rw, rh = rect
@@ -26,6 +27,7 @@ class Player:
         self.color = color
         self.size = size
         self.speed = 4
+        self.skill_manager = SkillManager()
 
     def handle_input(self, keys: pygame.key.ScancodeWrapper, tree_rects: List[Tuple[int, int, int, int]]) -> None:
         dx, dy = 0, 0
@@ -58,3 +60,13 @@ class Player:
             self.color,
             (screen_x, screen_y, self.size, self.size)
         )
+
+    def add_xp(self, skill_name: str, amount: int) -> bool:
+        """Add XP to a skill via the player's SkillManager. Returns True if leveled up."""
+        return self.skill_manager.add_xp_to_skill(skill_name, amount)
+
+    def get_skill_level(self, skill_name: str) -> int:
+        return self.skill_manager.get_skill_level(skill_name)
+
+    def get_skill_xp(self, skill_name: str) -> int:
+        return self.skill_manager.get_skill_xp(skill_name)

@@ -43,9 +43,9 @@ class GameManager:
     def run(self) -> None:
         while self.running:
             self._handle_events()
-            self._update()
+            dt = self.clock.tick(60) / 1000.0  # Delta time in seconds
+            self._update(dt)
             self._render()
-            self.clock.tick(60)
 
     def _handle_events(self) -> None:
         for event in pygame.event.get():
@@ -66,11 +66,12 @@ class GameManager:
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 self.action = None  # Allow canceling action
 
-    def _update(self) -> None:
+    def _update(self, dt: float) -> None:
         keys = pygame.key.get_pressed()
         tree_rects = [tree.get_rect() for tree in self.trees]
         self.player.handle_input(keys, tree_rects)
         self.camera_offset = self._calculate_camera_offset()
+        CHOP_TIME = 1.0  # seconds per chop, can be moved/configured per station
         # Continuous action system
         if self.action is not None and self.action["type"] == "cutting":
             idx = self.action["target_idx"]
@@ -79,11 +80,17 @@ class GameManager:
                 player_rect = self.player.get_rect()
                 # Check proximity and if tree is alive
                 if not tree.is_dead() and find_nearby_tree(player_rect, [tree.get_rect()]) == 0:
-                    self.action["progress"] += 1 / 60  # 1 second per chop
-                    if self.action["progress"] >= 1.0:
+                    self.action["progress"] += dt  # Use real time, not frames
+                    if self.action["progress"] >= CHOP_TIME:
                         tree.take_damage(1)
                         self.action["progress"] = 0.0
                         self.action["target_life"] = tree.life
+                        # Use the station's skill/XP reward interface
+                        skill_name, xp_amount = tree.get_skill_xp_reward()
+                        leveled_up = self.player.add_xp(skill_name, xp_amount)
+                        xp = self.player.get_skill_xp(skill_name)
+                        level = self.player.get_skill_level(skill_name)
+                        print(f"{skill_name} XP: {xp}, Level: {level}{' (Level Up!)' if leveled_up else ''}")
                         if tree.is_dead():
                             # Remove dead tree and spawn a new one
                             self.trees.pop(idx)

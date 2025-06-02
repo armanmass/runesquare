@@ -11,3 +11,7 @@ class SkillStation:
         screen_x = self.position[0] - camera_offset[0]
         screen_y = self.position[1] - camera_offset[1]
         pygame.draw.rect(surface, (128, 128, 128), (screen_x, screen_y, self.size, self.size))
+
+    def get_skill_xp_reward(self) -> tuple[str, int]:
+        """Return (skill_name, xp_amount) for this station. Subclasses must implement."""
+        raise NotImplementedError("SkillStation subclasses must implement get_skill_xp_reward().")

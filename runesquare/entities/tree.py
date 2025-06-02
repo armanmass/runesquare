@@ -51,3 +51,6 @@ class Tree(SkillStation):
         pygame.draw.rect(surface, (139, 69, 19), (bar_x, bar_y, bar_width, bar_height))  # Brown background
         pygame.draw.rect(surface, (50, 205, 50), (bar_x, bar_y, filled, bar_height))  # Green life
         pygame.draw.rect(surface, (0, 0, 0), (bar_x, bar_y, bar_width, bar_height), 1)
+
+    def get_skill_xp_reward(self) -> tuple[str, int]:
+        return ("Woodcutting", 25)
