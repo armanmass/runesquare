@@ -28,6 +28,7 @@ class Player:
         self.size = size
         self.speed = 4
         self.skill_manager = SkillManager()
+        self.inventory: list[str] = []  # Simple inventory for item names
 
     def handle_input(self, keys: pygame.key.ScancodeWrapper, tree_rects: List[Tuple[int, int, int, int]]) -> None:
         dx, dy = 0, 0

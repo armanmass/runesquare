@@ -11,6 +11,7 @@ from runesquare.entities.player import is_inside_ellipse
 from runesquare.systems.interaction import find_nearby_tree
 from runesquare.data.save_load import save_skills, load_skills
 from runesquare.ui.skill_panel import SkillPanel
+from runesquare.ui.inventory_ui import InventoryUI
 
 class GameManager:
     def __init__(self) -> None:
@@ -36,6 +37,7 @@ class GameManager:
         # Initialize font and skill panel
         self._font = pygame.font.SysFont("consolas", 20)
         self._skill_panel = SkillPanel(self._font, position=(10, 10))
+        self._inventory_ui = InventoryUI(self._font, (WINDOW_WIDTH, WINDOW_HEIGHT))
 
     def _init_clock(self):
         return pygame.time.Clock()
@@ -106,6 +108,10 @@ class GameManager:
                         xp = self.player.get_skill_xp(skill_name)
                         level = self.player.get_skill_level(skill_name)
                         print(f"{skill_name} XP: {xp}, Level: {level}{' (Level Up!)' if leveled_up else ''}")
+                        # Award log to player
+                        log_type = tree.get_log_type()
+                        self.player.inventory.append(log_type)
+                        print(f"Obtained: {log_type}")
                         if tree.is_dead():
                             # Remove dead tree and spawn a new one
                             self.trees.pop(idx)
@@ -134,6 +140,8 @@ class GameManager:
         self.player.draw(self.screen, self.camera_offset)
         # Draw skill panel
         self._skill_panel.draw(self.screen, self.player.skill_manager)
+        # Draw inventory UI
+        self._inventory_ui.draw(self.screen, self.player.inventory)
         # Draw progress bar if cutting
         if self.action is not None and self.action["type"] == "cutting":
             px, py, pw, ph = self.player.get_rect()

@@ -54,3 +54,6 @@ class Tree(SkillStation):
 
     def get_skill_xp_reward(self) -> tuple[str, int]:
         return ("Woodcutting", 25)
+
+    def get_log_type(self) -> str:
+        return "normal_log"
