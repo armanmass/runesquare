@@ -13,11 +13,12 @@ class SkillPanel:
         # Draw total experience and total level at the top
         total_xp = skill_manager.total_experience()
         total_level = skill_manager.total_level()
-        header_text = f"Total XP: {total_xp}    Total Level: {total_level}"
+        header_text = f"Total Level: {total_level}  Total XP: {total_xp}"
         header_surf = self.font.render(header_text, True, (255, 255, 0))
+
         surface.blit(header_surf, (x, y))
         y += self.line_height + 2
         for idx, (name, skill) in enumerate(skill_manager.get_all_skills().items()):
-            text = f"{name}: Lv {skill.level}  XP {skill.current_xp}"
+            text = f"{name} Lv: {skill.level} ({skill.current_xp} XP)"
             text_surf = self.font.render(text, True, (255, 255, 255))
             surface.blit(text_surf, (x, y + idx * self.line_height))

@@ -7,10 +7,24 @@ class Skill:
         self.name: str = name
         self.current_xp: int = current_xp
 
+    @staticmethod
+    def runescape_xp_for_level(level: int) -> int:
+        xp = 0
+        for k in range(1, level):
+            xp += int((k + 300 * 2 ** (k / 7.0)) / 4)
+        return xp
+
+    @staticmethod
+    def runescape_level_for_xp(xp: int) -> int:
+        level = 1
+        while Skill.runescape_xp_for_level(level + 1) <= xp:
+            level += 1
+        return level
+
     @property
     def level(self) -> int:
-        # Simple formula: level = floor(sqrt(xp / 100)) based on gameplan.txt
-        return int(math.sqrt(self.current_xp / 100))
+        # Use RuneScape XP formula for level calculation
+        return self.runescape_level_for_xp(self.current_xp)
 
     def add_xp(self, amount: int) -> bool:
         """Adds XP and returns True if the level increased."""
